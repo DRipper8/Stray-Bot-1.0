@@ -2,9 +2,11 @@ import cv2 # pip install opencv-python-headless pyttsx3 or/and opencv-python
 import pyttsx3
 import threading
 import random
+import queue
 
 # Initialize video paths
-video_paths = ["C:/Users/username/Documents/@username/programmieren/stray bot/videos/momo-default-idle.mp4", "C:/Users/Dominik Vogel/Documents/@Dominik Vogel/programmieren/stray bot/videos/momo-default-talk.mp4"]  # Add more video paths if needed
+idle_video_path = "./momo-default-idle.mp4"
+talk_video_path = "./momo-default-talk.mp4"
 
 # Initialize text-to-speech engine
 tts_engine = pyttsx3.init()
@@ -23,42 +25,40 @@ def generate_bot_response(user_input):
         return "I'm not sure how to respond to that."
 
 # Play video loop function (with video switching)
-def play_video(video_path):
-    cap = cv2.VideoCapture(video_path)
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            continue
-        cv2.imshow("Video", frame)
-        if cv2.waitKey(30) & 0xFF == ord('q'):
-            break
-    cap.release()
+def video_thread(intial_video_path, video_input_queue):
+    video_path = intial_video_path
+    while video_path is not None:
+        cap = cv2.VideoCapture(video_path)
+        while video_input_queue.empty():
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                continue
+            cv2.imshow("Video", frame)
+            cv2.waitKey(30)
+        cap.release()
+        video_path = video_input_queue.get()
 
 # Main program
 if __name__ == "__main__":
-    video_thread = threading.Thread(target=play_video, args=(video_paths[0],))
+    video_queue = queue.Queue()
+    video_thread = threading.Thread(target=video_thread, args=(idle_video_path, video_queue), daemon=True)
     video_thread.start()
-
     while True:
+        video_queue.put(idle_video_path)
+
         user_input = input("You: ")
+
         if "goodbye" in user_input.lower():
-            video_thread.join()
             break
 
-        new_video_path = video_paths[1] if video_thread.is_alive() else video_paths[0]
-
-        if new_video_path != video_paths[0]:
-            video_thread.join()
-
-        video_thread = threading.Thread(target=play_video, args=(new_video_path,))
-        video_thread.start()
+        video_queue.put(talk_video_path)
 
         bot_response = generate_bot_response(user_input)
         print("Bot:", bot_response)
         tts_engine.say(bot_response)
         tts_engine.runAndWait()
 
-    cv2.destroyAllWindows()
-
-print("Chat ended.")
+    video_queue.put(None)
+    video_thread.join()
+    print("Chat ended.")
