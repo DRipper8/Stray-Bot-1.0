@@ -1,0 +1,64 @@
+import cv2 # pip install opencv-python-headless pyttsx3 or/and opencv-python
+import pyttsx3
+import threading
+import random
+
+# Initialize video paths
+video_paths = ["C:/Users/username/Documents/@username/programmieren/stray bot/videos/momo-default-idle.mp4", "C:/Users/Dominik Vogel/Documents/@Dominik Vogel/programmieren/stray bot/videos/momo-default-talk.mp4"]  # Add more video paths if needed
+
+# Initialize text-to-speech engine
+tts_engine = pyttsx3.init()
+
+# Define the chatbot response generation function (same as before)
+def generate_bot_response(user_input):
+    user_input_lower = user_input.lower()
+
+    if "hello" in user_input_lower:
+        return "Hello there!"
+    elif "how are you" in user_input_lower:
+        return "I'm just a bot, but I'm functioning well. How can I assist you?"
+    elif "bye" in user_input_lower:
+        return "Goodbye! Feel free to come back anytime."
+    else:
+        return "I'm not sure how to respond to that."
+
+# Play video loop function (with video switching)
+def play_video(video_path):
+    cap = cv2.VideoCapture(video_path)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
+        cv2.imshow("Video", frame)
+        if cv2.waitKey(30) & 0xFF == ord('q'):
+            break
+    cap.release()
+
+# Main program
+if __name__ == "__main__":
+    video_thread = threading.Thread(target=play_video, args=(video_paths[0],))
+    video_thread.start()
+
+    while True:
+        user_input = input("You: ")
+        if "goodbye" in user_input.lower():
+            video_thread.join()
+            break
+
+        new_video_path = video_paths[1] if video_thread.is_alive() else video_paths[0]
+
+        if new_video_path != video_paths[0]:
+            video_thread.join()
+
+        video_thread = threading.Thread(target=play_video, args=(new_video_path,))
+        video_thread.start()
+
+        bot_response = generate_bot_response(user_input)
+        print("Bot:", bot_response)
+        tts_engine.say(bot_response)
+        tts_engine.runAndWait()
+
+    cv2.destroyAllWindows()
+
+print("Chat ended.")
