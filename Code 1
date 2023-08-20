@@ -4,6 +4,7 @@ import threading
 import random
 import queue
 import tkinter as tk
+import pygetwindow 
 
 # Initialize video paths
 idle_video_path = "./momo-default-idle.mp4"
@@ -73,7 +74,7 @@ if __name__ == "__main__":
 
     root.attributes('-alpha', 0.2)  # Adjust the alpha level as needed (0.0 - 1.0)
 
-    chat_text = tk.Text(root, state=tk.DISABLED)
+    chat_text = tk.Text(root, state=tk.DISABLED, height=10, width=40)  # Adjust the height and width as needed
     chat_text.pack()
 
     input_entry = tk.Entry(root)
