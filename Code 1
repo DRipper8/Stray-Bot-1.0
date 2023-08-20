@@ -3,6 +3,7 @@ import pyttsx3
 import threading
 import random
 import queue
+import tkinter as tk
 
 # Initialize video paths
 idle_video_path = "./momo-default-idle.mp4"
@@ -44,25 +45,50 @@ def video_thread(intial_video_path, video_input_queue):
         cap.release()
         video_path = video_input_queue.get()
 
+# A function to update the chat interface
+def update_chat_interface():
+    user_input = input_entry.get()
+    if "goodbye" in user_input.lower():
+        video_queue.put(None)
+        root.destroy()
+        return
+
+    video_queue.put(talk_video_path)  # Switch to talk_video_path
+
+    bot_response = generate_bot_response(user_input)
+    chat_text.config(state=tk.NORMAL)
+    chat_text.insert(tk.END, f"You: {user_input}\nBot: {bot_response}\n")
+    chat_text.config(state=tk.DISABLED)
+    tts_engine.say(bot_response)
+    tts_engine.runAndWait()
+    input_entry.delete(0, tk.END)
+
+    video_queue.put(idle_video_path)  # Return to idle_video_path
+
+
 # Main program
 if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("ChatBot")
+
+    root.attributes('-alpha', 0.2)  # Adjust the alpha level as needed (0.0 - 1.0)
+
+    chat_text = tk.Text(root, state=tk.DISABLED)
+    chat_text.pack()
+
+    input_entry = tk.Entry(root)
+    input_entry.pack()
+
+    send_button = tk.Button(root, text="Send", command=update_chat_interface)
+    send_button.pack()
+
     video_queue = queue.Queue()
     video_thread = threading.Thread(target=video_thread, args=(idle_video_path, video_queue), daemon=True)
     video_thread.start()
-    while True:
-        video_queue.put(idle_video_path)
 
-        user_input = input("You: ")
+    root.lift()
 
-        if "goodbye" in user_input.lower():
-            break
-
-        video_queue.put(talk_video_path)
-
-        bot_response = generate_bot_response(user_input)
-        print("Bot:", bot_response)
-        tts_engine.say(bot_response)
-        tts_engine.runAndWait()
+    root.mainloop()
 
     video_queue.put(None)
     video_thread.join()
