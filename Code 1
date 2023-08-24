@@ -4,7 +4,7 @@ import threading
 import random
 import queue
 import tkinter as tk
-import pygetwindow 
+import pygetwindow
 
 # Initialize video paths
 idle_video_path = "./momo-default-idle.mp4"
@@ -71,10 +71,11 @@ def update_chat_interface():
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("ChatBot")
+    root.iconbitmap()
 
-    root.attributes('-alpha', 0.2)  # Adjust the alpha level as needed (0.0 - 1.0)
+    root.attributes('-transparentcolor', '#ab23ff')
 
-    chat_text = tk.Text(root, state=tk.DISABLED, height=10, width=40)  # Adjust the height and width as needed
+    chat_text = tk.Text(root, state=tk.DISABLED, height=10, width=40, font=("Helvetica", 16), bg='#ab23ff')  # Adjust the height and width as needed
     chat_text.pack()
 
     input_entry = tk.Entry(root)
@@ -90,6 +91,10 @@ if __name__ == "__main__":
     root.lift()
 
     root.mainloop()
+
+    video_queue.put(None)
+    video_thread.join()
+    print("Chat ended.")
 
     video_queue.put(None)
     video_thread.join()
